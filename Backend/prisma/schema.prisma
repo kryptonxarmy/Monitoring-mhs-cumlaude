@@ -1,0 +1,73 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Student {
+  student_id Int        @id @unique
+  name       String
+  email      String     @unique
+  advisor    Lecturer?   @relation("Advisor", fields: [advisor_id], references: [lecturer_id])
+  advisor_id Int?
+  supervisor Lecturer?   @relation("Supervisor", fields: [supervisor_id], references: [lecturer_id])
+  supervisor_id Int?
+  proposals  Proposal[]
+  user       User?      @relation("StudentUser", fields: [user_id], references: [user_id])
+  user_id    Int?       @unique
+}
+
+model Lecturer {
+  lecturer_id Int       @id @unique
+  name        String
+  email       String    @unique
+  role        String
+  advises     Student[] @relation("Advisor")
+  supervises  Student[] @relation("Supervisor")
+  approvals   Approval[]
+  user        User?     @relation("LecturerUser", fields: [user_id], references: [user_id])
+  user_id     Int?      @unique
+}
+
+model Proposal {
+  proposal_id     Int        @id @default(autoincrement())
+  student         Student    @relation(fields: [student_id], references: [student_id])
+  student_id      Int
+  title           String
+  description     String
+  submission_date DateTime   @default(now())
+  approvals       Approval[]
+}
+
+model Approval {
+  approval_id     Int        @id @default(autoincrement())
+  proposal        Proposal   @relation(fields: [proposal_id], references: [proposal_id])
+  proposal_id     Int
+  lecturer        Lecturer?   @relation(fields: [lecturer_id], references: [lecturer_id])
+  lecturer_id     Int?
+  approval_status String
+  approval_date   DateTime   @default(now())
+  comments        String?
+}
+
+model User {
+  user_id       Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  role          String
+  student       Student? @relation("StudentUser")
+  lecturer      Lecturer? @relation("LecturerUser")
+  tokens        Token[]
+}
+
+model Token {
+  token_id Int      @id @default(autoincrement())
+  user     User     @relation(fields: [user_id], references: [user_id])
+  user_id  Int
+  token    String   @unique
+  created  DateTime @default(now())
+  revoked  Boolean  @default(false)
+}
